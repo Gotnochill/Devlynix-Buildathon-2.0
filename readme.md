@@ -24,5 +24,12 @@ https://access.redhat.com/security/security-updates/cve?q=&p=2&sort=updated+desc
 3. The agent will scan the repo to find and flag any CVE's, on top of that add a database with all CVEs as shared above in the url, redhat database for CVEs.
 4. Generate a report / pdf / md file and then flag all the flaws in the codebase, along with their path and the severity.
 
-Possible add ons:
+### Possible add ons:
 make something similar to --pre-commit, where our engine is live testing the repo simultaneouly before anything is even pushed to github, sort of like a script that the developer runs (sort of like ./start.sh) so that vulnerabilities or open exposed api keys can be found before it is even pushed to github.
+
+### Roles and Responsibility
+
+1. Everyone: Read about how we can integrate the redhat db for CVEs into the project, a vulnerability flagging engine for the codebase
+2. Monalisha: prompt and try to get the dashboard live and running, pdf generation end points 
+3. Puneet: Github api , after the user submits the repo url, how to bring in the codebase data and code into our flagging engine , so that the agent can scan it and check for vulneribilities
+4. Ritvik: Sounga
