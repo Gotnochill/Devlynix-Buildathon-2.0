@@ -9,3 +9,10 @@ An automated web scanner dashboard. Users input a URL or GitHub repo link, and t
 
 ### Recommended Tech Stack:
  Node.js/Express (Backend logic), Python (optional for scanning scripts), React.js/Next.js.
+
+
+# Solution
+
+## Red hat database
+
+https://access.redhat.com/security/security-updates/cve?q=&p=2&sort=updated+desc&rows=10&documentKind=Cve
