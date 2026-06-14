@@ -1,7 +1,57 @@
 const axios = require('axios');
 
 const REDHAT_BASE = 'https://access.redhat.com/labs/securitydataapi';
-const NVD_BASE = 'https://services.nvd.nist.gov/rest/json/cves/2.0';
+const GH_ADVISORY_BASE = 'https://api.github.com/advisories';
+
+// GitHub Advisory uses different ecosystem identifiers than we do internally
+const GH_ECOSYSTEM = {
+  npm:      'npm',
+  pypi:     'pip',
+  gem:      'rubygems',
+  maven:    'maven',
+  go:       'go',
+  cargo:    'cargo',
+  composer: 'composer',
+};
+
+async function searchGitHubAdvisory(packageName, ecosystem) {
+  try {
+    const headers = { Accept: 'application/vnd.github.v3+json' };
+    if (process.env.GITHUB_TOKEN) {
+      headers['Authorization'] = `Bearer ${process.env.GITHUB_TOKEN}`;
+    }
+
+    const res = await axios.get(GH_ADVISORY_BASE, {
+      params: { affects: packageName, per_page: 10 },
+      headers,
+      timeout: 8000,
+    });
+
+    const ghEco = GH_ECOSYSTEM[ecosystem] || ecosystem;
+
+    return (res.data || [])
+      .filter(a =>
+        // Keep only advisories that explicitly affect this ecosystem
+        a.vulnerabilities?.some(v =>
+          v.package.ecosystem.toLowerCase() === ghEco.toLowerCase() &&
+          v.package.name.toLowerCase() === packageName.toLowerCase()
+        )
+      )
+      .map(a => ({
+        id: a.cve_id || a.ghsa_id,
+        ghsaId: a.ghsa_id,
+        description: a.summary || a.description || '',
+        severity: a.severity || 'unknown',
+        score: a.cvss?.score || a.cvss_severities?.cvss_v3?.score || null,
+        patchedVersion: a.vulnerabilities?.find(
+          v => v.package.name.toLowerCase() === packageName.toLowerCase()
+        )?.first_patched_version || null,
+        source: 'github',
+      }));
+  } catch {
+    return [];
+  }
+}
 
 async function searchRedHat(keyword) {
   try {
@@ -21,39 +71,12 @@ async function searchRedHat(keyword) {
   }
 }
 
-async function searchNVD(keyword) {
-  try {
-    const headers = {};
-    if (process.env.NVD_API_KEY) headers['apiKey'] = process.env.NVD_API_KEY;
-
-    const res = await axios.get(NVD_BASE, {
-      params: { keywordSearch: keyword, resultsPerPage: 5 },
-      headers,
-      timeout: 8000,
-    });
-
-    return (res.data?.vulnerabilities || []).map(v => {
-      const cve = v.cve;
-      const metric =
-        cve.metrics?.cvssMetricV31?.[0] ||
-        cve.metrics?.cvssMetricV30?.[0] ||
-        cve.metrics?.cvssMetricV2?.[0];
-      return {
-        id: cve.id,
-        description: cve.descriptions?.find(d => d.lang === 'en')?.value || '',
-        score: metric?.cvssData?.baseScore,
-        severity: metric?.cvssData?.baseSeverity?.toLowerCase() || 'unknown',
-        source: 'nvd',
-      };
-    });
-  } catch {
-    return [];
-  }
-}
-
-async function lookupCVE(keyword) {
-  const [redhat, nvd] = await Promise.all([searchRedHat(keyword), searchNVD(keyword)]);
-  return [...redhat, ...nvd];
+async function lookupCVE(packageName, ecosystem) {
+  const [github, redhat] = await Promise.all([
+    searchGitHubAdvisory(packageName, ecosystem),
+    searchRedHat(packageName),
+  ]);
+  return [...github, ...redhat];
 }
 
 module.exports = { lookupCVE };
