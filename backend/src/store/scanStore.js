@@ -1,35 +1,26 @@
-const scans = new Map();
+const Scan = require('../models/Scan');
 
-function createScan(id, meta) {
-  const scan = {
+async function createScan(id, meta) {
+  const doc = await Scan.create({
     id,
     status: 'queued',
     target: meta.target,
     type: meta.type,
     findings: [],
-    summary: null,
-    createdAt: new Date().toISOString(),
-    completedAt: null,
-  };
-  scans.set(id, scan);
-  return scan;
+  });
+  return doc.toObject();
 }
 
-function getScan(id) {
-  return scans.get(id) || null;
+async function getScan(id) {
+  return Scan.findOne({ id }).lean();
 }
 
-function updateScan(id, updates) {
-  const scan = scans.get(id);
-  if (!scan) return null;
-  Object.assign(scan, updates);
-  return scan;
+async function updateScan(id, updates) {
+  return Scan.findOneAndUpdate({ id }, { $set: updates }, { new: true }).lean();
 }
 
-function addFinding(id, finding) {
-  const scan = scans.get(id);
-  if (!scan) return null;
-  scan.findings.push(finding);
+async function addFinding(id, finding) {
+  await Scan.updateOne({ id }, { $push: { findings: finding } });
   return finding;
 }
 

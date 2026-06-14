@@ -3,8 +3,8 @@ const router = express.Router();
 const { getScan } = require('../store/scanStore');
 const { generatePDF } = require('../services/reportService');
 
-router.get('/:id/pdf', (req, res) => {
-  const scan = getScan(req.params.id);
+router.get('/:id/pdf', async (req, res) => {
+  const scan = await getScan(req.params.id);
   if (!scan) return res.status(404).json({ error: 'Scan not found' });
   if (scan.status !== 'completed') {
     return res.status(400).json({ error: 'Scan not yet complete' });

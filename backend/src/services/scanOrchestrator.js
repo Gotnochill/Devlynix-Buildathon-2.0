@@ -2,12 +2,13 @@ const { updateScan, addFinding, getScan } = require('../store/scanStore');
 const { scanHeaders } = require('./scanner/headerScanner');
 const { scanSecrets } = require('./scanner/secretScanner');
 const { scanDependencies } = require('./scanner/dependencyScanner');
+const { scanWithLLM } = require('./scanner/llmScanner');
 const { extractAllDeps } = require('./scanner/manifestParser');
 const { fetchRepoData } = require('./github/githubService');
 const { emitProgress } = require('../sockets/scanSocket');
 
 async function runScan(scanId, target, type) {
-  updateScan(scanId, { status: 'running' });
+  await updateScan(scanId, { status: 'running' });
   emitProgress(scanId, { status: 'running', message: 'Scan started' });
 
   try {
@@ -17,11 +18,11 @@ async function runScan(scanId, target, type) {
       await runGithubScan(scanId, target);
     }
 
-    const summary = buildSummary(scanId);
-    updateScan(scanId, { status: 'completed', completedAt: new Date().toISOString(), summary });
+    const summary = await buildSummary(scanId);
+    await updateScan(scanId, { status: 'completed', completedAt: new Date().toISOString(), summary });
     emitProgress(scanId, { status: 'completed', summary });
   } catch (err) {
-    updateScan(scanId, { status: 'failed', error: err.message });
+    await updateScan(scanId, { status: 'failed', error: err.message });
     emitProgress(scanId, { status: 'failed', error: err.message });
   }
 }
@@ -30,7 +31,7 @@ async function runUrlScan(scanId, url) {
   emitProgress(scanId, { message: 'Scanning HTTP security headers...' });
   const findings = await scanHeaders(url);
   for (const f of findings) {
-    addFinding(scanId, f);
+    await addFinding(scanId, f);
     emitProgress(scanId, { finding: f });
   }
 }
@@ -43,7 +44,7 @@ async function runGithubScan(scanId, repoUrl) {
   for (const file of repoData.files) {
     const findings = scanSecrets(file.content, file.path);
     for (const f of findings) {
-      addFinding(scanId, f);
+      await addFinding(scanId, f);
       emitProgress(scanId, { finding: f });
     }
   }
@@ -54,14 +55,23 @@ async function runGithubScan(scanId, repoUrl) {
     emitProgress(scanId, { message: `Checking ${allDeps.length} dependencies (${ecosystems}) for CVEs...` });
     const findings = await scanDependencies(allDeps);
     for (const f of findings) {
-      addFinding(scanId, f);
+      await addFinding(scanId, f);
+      emitProgress(scanId, { finding: f });
+    }
+  }
+
+  if (process.env.ANTHROPIC_API_KEY) {
+    emitProgress(scanId, { message: 'Running AI code analysis...' });
+    const findings = await scanWithLLM(repoData.files);
+    for (const f of findings) {
+      await addFinding(scanId, f);
       emitProgress(scanId, { finding: f });
     }
   }
 }
 
-function buildSummary(scanId) {
-  const scan = getScan(scanId);
+async function buildSummary(scanId) {
+  const scan = await getScan(scanId);
   const counts = { critical: 0, high: 0, medium: 0, low: 0 };
   for (const f of scan.findings) {
     if (counts[f.severity] !== undefined) counts[f.severity]++;

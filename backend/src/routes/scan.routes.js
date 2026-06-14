@@ -14,15 +14,15 @@ router.post('/', async (req, res) => {
   }
 
   const id = uuidv4();
-  const scan = createScan(id, { target, type });
+  const scan = await createScan(id, { target, type });
 
   runScan(id, target, type).catch(console.error);
 
   res.status(202).json({ scanId: id, status: scan.status });
 });
 
-router.get('/:id', (req, res) => {
-  const scan = getScan(req.params.id);
+router.get('/:id', async (req, res) => {
+  const scan = await getScan(req.params.id);
   if (!scan) return res.status(404).json({ error: 'Scan not found' });
   res.json(scan);
 });
