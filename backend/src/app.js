@@ -5,7 +5,20 @@ const reportRoutes = require('./routes/report.routes');
 
 const app = express();
 
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173' }));
+const ALLOWED_ORIGINS = [
+  process.env.FRONTEND_URL || 'http://localhost:5173',
+  // Chrome extension requests arrive with a chrome-extension:// origin
+  /^chrome-extension:\/\//,
+];
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true); // non-browser clients
+    const allowed = ALLOWED_ORIGINS.some(o =>
+      o instanceof RegExp ? o.test(origin) : o === origin
+    );
+    cb(allowed ? null : new Error('Not allowed by CORS'), allowed);
+  },
+}));
 app.use(express.json());
 
 app.use('/api/scan', scanRoutes);
