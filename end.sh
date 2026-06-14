@@ -11,8 +11,6 @@ stop_pid() {
 
   if [ -z "$pid" ]; then return; fi
 
-  # taskkill kills the whole process tree on Windows (Git Bash)
-  # kill covers macOS / Linux
   if command -v taskkill >/dev/null 2>&1; then
     taskkill /F /T /PID "$pid" >/dev/null 2>&1 \
       && echo "Stopped PID $pid" \
@@ -24,7 +22,21 @@ stop_pid() {
   fi
 }
 
+# Kill any stray node processes that grabbed port 3001 or 5173
+kill_port() {
+  local port=$1
+  if command -v powershell.exe >/dev/null 2>&1; then
+    powershell.exe -NoProfile -Command "
+      \$p = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
+      if (\$p) { Stop-Process -Id \$p.OwningProcess -Force -ErrorAction SilentlyContinue }
+    " 2>/dev/null
+  fi
+}
+
 stop_pid .backend.pid
 stop_pid .frontend.pid
+
+kill_port 3001
+kill_port 5173
 
 echo "Done."
