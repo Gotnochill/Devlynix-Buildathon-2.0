@@ -5,11 +5,13 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import SeverityBadge from '../components/SeverityBadge';
 
 const STATUS_STYLE = {
-  queued:    { bg: '#1a2535', text: '#7dd3fc', border: '#0369a1' },
-  running:   { bg: '#1a2535', text: '#7dd3fc', border: '#0369a1' },
-  completed: { bg: '#162416', text: '#86efac', border: '#166534' },
-  failed:    { bg: '#2a1515', text: '#f87171', border: '#991b1b' },
+  queued:    { bg: '#172419', text: '#52b788', border: '#3a6147' },
+  running:   { bg: '#172419', text: '#52b788', border: '#3a6147' },
+  completed: { bg: '#152215', text: '#5dba7e', border: '#3d8c5c' },
+  failed:    { bg: '#2a1515', text: '#e87070', border: '#b91c1c' },
 };
+
+const SEV_ORDER = ['critical', 'high', 'medium', 'low'];
 
 export default function ReportPage() {
   const { scanId } = useParams();
@@ -36,16 +38,20 @@ export default function ReportPage() {
   const ss = STATUS_STYLE[scan.status] || STATUS_STYLE.failed;
 
   return (
-    <div style={{ maxWidth: 820, margin: '0 auto', padding: '32px 20px' }}>
+    <div style={{ maxWidth: 860, margin: '0 auto', padding: '32px 20px' }}>
+
       {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <Link to="/" style={{ color: 'var(--muted)', fontSize: 13 }}>← Back</Link>
+      <div style={{ marginBottom: 28 }}>
+        <Link to="/" style={{ color: 'var(--muted)', fontSize: 13 }}>Back</Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
           <h1 style={{ fontSize: 22, fontWeight: 700 }}>Scan Report</h1>
           <span style={{
             padding: '2px 10px',
             borderRadius: 20,
-            fontSize: 12,
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
             background: ss.bg,
             color: ss.text,
             border: `1px solid ${ss.border}`,
@@ -69,28 +75,44 @@ export default function ReportPage() {
         </div>
       )}
 
-      {/* Summary tiles */}
+      {/* Bento summary */}
       {scan.summary && (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
+          gridTemplateColumns: '2fr 1fr 1fr 1fr',
           gap: 10,
           marginBottom: 24,
         }}>
-          {['critical', 'high', 'medium', 'low'].map(sev => (
-            <div key={sev} style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              padding: '14px 10px',
-              textAlign: 'center',
-            }}>
-              <div style={{ fontSize: 30, fontWeight: 700, marginBottom: 6 }}>
-                {scan.summary[sev] ?? 0}
+          {SEV_ORDER.map((sev, i) => {
+            const count = scan.summary[sev] ?? 0;
+            const isCritical = sev === 'critical';
+            return (
+              <div key={sev} style={{
+                background: 'var(--surface)',
+                border: `1px solid ${count > 0 && isCritical ? '#b91c1c' : 'var(--border)'}`,
+                borderRadius: 10,
+                padding: isCritical ? '20px 18px' : '14px 12px',
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <div style={{
+                  fontSize: isCritical ? 40 : 28,
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  marginBottom: 8,
+                  color: count > 0
+                    ? { critical: '#e87070', high: '#e87f4a', medium: '#d4a040', low: '#5dba7e' }[sev]
+                    : 'var(--muted)',
+                }}>
+                  {count}
+                </div>
+                <SeverityBadge severity={sev} />
               </div>
-              <SeverityBadge severity={sev} />
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -117,7 +139,16 @@ export default function ReportPage() {
 
       {/* Findings */}
       {scan.findings.length === 0 && !isActive && (
-        <p style={{ color: 'var(--muted)', padding: '16px 0' }}>No findings detected.</p>
+        <div style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 10,
+          padding: '32px 20px',
+          textAlign: 'center',
+          color: 'var(--muted)',
+        }}>
+          No findings detected.
+        </div>
       )}
       {scan.findings.map((finding, i) => (
         <FindingCard key={i} finding={finding} />

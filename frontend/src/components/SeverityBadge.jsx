@@ -1,12 +1,12 @@
 const STYLES = {
-  critical: { bg: '#3f1515', text: '#f87171', border: '#dc2626' },
-  high:     { bg: '#3f2015', text: '#fb923c', border: '#ea580c' },
-  medium:   { bg: '#3f3015', text: '#fbbf24', border: '#d97706' },
-  low:      { bg: '#1a2f15', text: '#86efac', border: '#65a30d' },
+  critical: { bg: '#2d1515', text: '#e87070', border: '#b91c1c' },
+  high:     { bg: '#2d1c12', text: '#e87f4a', border: '#c2540a' },
+  medium:   { bg: '#2d2512', text: '#d4a040', border: '#b45309' },
+  low:      { bg: '#152215', text: '#5dba7e', border: '#3d8c5c' },
 };
 
 export default function SeverityBadge({ severity }) {
-  const s = STYLES[severity] || { bg: '#1e293b', text: '#94a3b8', border: '#475569' };
+  const s = STYLES[severity] || { bg: '#1c2620', text: '#7d9485', border: '#253022' };
   return (
     <span style={{
       background: s.bg,

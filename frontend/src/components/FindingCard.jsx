@@ -20,17 +20,18 @@ export default function FindingCard({ finding }) {
         {finding.location && (
           <code style={{
             fontSize: 12,
-            color: '#7dd3fc',
-            background: '#0c1f30',
+            color: 'var(--accent-light)',
+            background: 'var(--surface-2)',
             padding: '2px 7px',
             borderRadius: 3,
+            border: '1px solid var(--border)',
           }}>
             {finding.location}
           </code>
         )}
         {finding.cveId && (
           <span style={{ fontSize: 12, color: 'var(--muted)' }}>
-            {finding.cveId}{finding.score ? ` — CVSS ${finding.score}` : ''}
+            {finding.cveId}{finding.score ? ` / CVSS ${finding.score}` : ''}
           </span>
         )}
       </div>

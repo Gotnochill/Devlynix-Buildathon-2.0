@@ -5,16 +5,18 @@
 }
 
 :root {
-  --bg: #0f1117;
-  --surface: #1a1d27;
-  --border: #2a2d3e;
-  --text: #e2e8f0;
-  --muted: #94a3b8;
-  --accent: #6366f1;
-  --critical: #dc2626;
-  --high: #ea580c;
-  --medium: #d97706;
-  --low: #65a30d;
+  --bg: #111814;
+  --surface: #171f19;
+  --surface-2: #1c2620;
+  --border: #253022;
+  --text: #dce8df;
+  --muted: #7d9485;
+  --accent: #4a7c59;
+  --accent-light: #52b788;
+  --critical: #b91c1c;
+  --high: #c2540a;
+  --medium: #b45309;
+  --low: #3d8c5c;
 }
 
 body {
@@ -27,7 +29,7 @@ body {
 }
 
 a {
-  color: var(--accent);
+  color: var(--accent-light);
   text-decoration: none;
 }
 
@@ -45,6 +47,34 @@ button {
 input:focus {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
+}
+
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 600px;
+}
+
+.bento-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+
+.bento-card.wide {
+  grid-column: span 2;
+}
+
+@media (max-width: 520px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+  .bento-card.wide {
+    grid-column: span 1;
+  }
 }
 
 @keyframes spin {
