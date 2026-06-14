@@ -2,6 +2,7 @@ const { updateScan, addFinding, getScan } = require('../store/scanStore');
 const { scanHeaders } = require('./scanner/headerScanner');
 const { scanSecrets } = require('./scanner/secretScanner');
 const { scanDependencies } = require('./scanner/dependencyScanner');
+const { extractAllDeps } = require('./scanner/manifestParser');
 const { fetchRepoData } = require('./github/githubService');
 const { emitProgress } = require('../sockets/scanSocket');
 
@@ -47,13 +48,11 @@ async function runGithubScan(scanId, repoUrl) {
     }
   }
 
-  if (repoData.packageJson) {
-    const pkg = repoData.packageJson;
-    const deps = Object.entries({ ...pkg.dependencies, ...pkg.devDependencies })
-      .map(([name, version]) => ({ name, version, ecosystem: 'npm' }));
-
-    emitProgress(scanId, { message: `Checking ${deps.length} npm dependencies for CVEs...` });
-    const findings = await scanDependencies(deps);
+  const allDeps = extractAllDeps(repoData);
+  if (allDeps.length > 0) {
+    const ecosystems = [...new Set(allDeps.map(d => d.ecosystem))].join(', ');
+    emitProgress(scanId, { message: `Checking ${allDeps.length} dependencies (${ecosystems}) for CVEs...` });
+    const findings = await scanDependencies(allDeps);
     for (const f of findings) {
       addFinding(scanId, f);
       emitProgress(scanId, { finding: f });

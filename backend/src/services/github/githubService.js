@@ -30,6 +30,17 @@ async function getFileContent(owner, repo, path) {
   return Buffer.from(res.data.content, 'base64').toString('utf-8');
 }
 
+// Maps well-known manifest paths to result keys
+const MANIFEST_MAP = {
+  'requirements.txt':  'requirementsTxt',
+  'pyproject.toml':    'pyprojectToml',
+  'go.mod':            'goMod',
+  'Gemfile':           'gemfile',
+  'pom.xml':           'pomXml',
+  'Cargo.toml':        'cargoToml',
+  'composer.json':     'composerJson',
+};
+
 const SCANNABLE = /\.(js|ts|jsx|tsx|py|env|json|yml|yaml|sh|php|rb|go|java|cs)$/;
 
 async function fetchRepoData(repoUrl) {
@@ -37,29 +48,36 @@ async function fetchRepoData(repoUrl) {
   const tree = await getRepoTree(owner, repo);
 
   const blobs = tree.filter(f => f.type === 'blob');
-  const result = { owner, repo, files: [], packageJson: null };
+  const result = { owner, repo, files: [], packageJson: null, manifests: {} };
 
+  // Fetch package.json
   const pkgFile = blobs.find(f => f.path === 'package.json');
   if (pkgFile) {
     try {
       const content = await getFileContent(owner, repo, 'package.json');
       result.packageJson = JSON.parse(content);
-    } catch {
-      // malformed package.json — skip dep scan
-    }
+    } catch { /* malformed — skip */ }
   }
 
-  // Limit to 50 files to stay within GitHub rate limits
-  const scannable = blobs.filter(f => SCANNABLE.test(f.path)).slice(0, 50);
+  // Fetch all other known manifest files (root-level only)
+  await Promise.allSettled(
+    Object.entries(MANIFEST_MAP).map(async ([filename, key]) => {
+      const found = blobs.find(f => f.path === filename || f.path.endsWith(`/${filename}`));
+      if (!found) return;
+      try {
+        result.manifests[key] = await getFileContent(owner, repo, found.path);
+      } catch { /* skip */ }
+    })
+  );
 
+  // Fetch scannable source files for secret scanning (limit 50)
+  const scannable = blobs.filter(f => SCANNABLE.test(f.path)).slice(0, 50);
   await Promise.allSettled(
     scannable.map(async file => {
       try {
         const content = await getFileContent(owner, repo, file.path);
         result.files.push({ path: file.path, content });
-      } catch {
-        // skip unreadable files
-      }
+      } catch { /* skip */ }
     })
   );
 
