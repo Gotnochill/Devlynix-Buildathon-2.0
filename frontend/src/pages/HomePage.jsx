@@ -1,5 +1,4 @@
 import ScanForm from '../components/ScanForm';
-import LoginButton from '../components/LoginButton';
 
 const FEATURES = [
   {
@@ -56,10 +55,6 @@ export default function HomePage() {
       justifyContent: 'center',
       padding: '60px 24px',
     }}>
-      <div style={{ position: 'absolute', top: 20, right: 24 }}>
-        <LoginButton />
-      </div>
-
       <div style={{ marginBottom: 10, textAlign: 'center' }}>
         <div style={{
           display: 'inline-block',
