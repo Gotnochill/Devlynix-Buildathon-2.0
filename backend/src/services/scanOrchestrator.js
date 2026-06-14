@@ -1,6 +1,7 @@
 const { updateScan, addFinding, getScan } = require('../store/scanStore');
 const { scanHeaders } = require('./scanner/headerScanner');
 const { scanSecrets } = require('./scanner/secretScanner');
+const { scanXSS } = require('./scanner/xssScanner');
 const { scanDependencies } = require('./scanner/dependencyScanner');
 const { scanWithLLM } = require('./scanner/llmScanner');
 const { extractAllDeps } = require('./scanner/manifestParser');
@@ -40,10 +41,16 @@ async function runGithubScan(scanId, repoUrl) {
   emitProgress(scanId, { message: 'Fetching repository...' });
   const repoData = await fetchRepoData(repoUrl);
 
-  emitProgress(scanId, { message: `Scanning ${repoData.files.length} files for secrets...` });
+  emitProgress(scanId, { message: `Scanning ${repoData.files.length} files for secrets and XSS...` });
   for (const file of repoData.files) {
-    const findings = scanSecrets(file.content, file.path);
-    for (const f of findings) {
+    const secretFindings = scanSecrets(file.content, file.path);
+    for (const f of secretFindings) {
+      await addFinding(scanId, f);
+      emitProgress(scanId, { finding: f });
+    }
+
+    const xssFindings = scanXSS(file.content, file.path);
+    for (const f of xssFindings) {
       await addFinding(scanId, f);
       emitProgress(scanId, { finding: f });
     }
