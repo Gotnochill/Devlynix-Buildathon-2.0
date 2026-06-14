@@ -8,7 +8,10 @@ export default function Layout({ children }) {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="app-layout">
+    <div 
+      className="app-layout"
+      style={{ '--sidebar-current-width': sidebarOpen ? 'var(--sidebar-width)' : 'var(--sidebar-collapsed)' }}
+    >
       <AnimatePresence>
         <Sidebar
           collapsed={!sidebarOpen}

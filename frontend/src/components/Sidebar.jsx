@@ -5,6 +5,7 @@ import {
   ScanSearch,
   Clock,
   ChevronLeft,
+  ChevronRight,
   Menu,
   Sun,
   Moon,
@@ -39,18 +40,19 @@ export default function Sidebar({ collapsed, onToggle, theme, onToggleTheme }) {
       )}
 
       <motion.aside
+        initial={false}
+        animate={{ width: collapsed ? 72 : 260 }}
+        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
         style={{
           position: 'fixed',
           top: 0,
           left: 0,
           bottom: 0,
-          width: 'var(--sidebar-width)',
           background: 'var(--bg-alt)',
           borderRight: '1px solid var(--border)',
           display: 'flex',
           flexDirection: 'column',
           zIndex: 50,
-          overflow: 'hidden',
         }}
       >
         {/* Logo */}
@@ -69,12 +71,15 @@ export default function Sidebar({ collapsed, onToggle, theme, onToggleTheme }) {
               alignItems: 'center',
               gap: 10,
               textDecoration: 'none',
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
             }}
           >
             <div
               style={{
                 width: 34,
                 height: 34,
+                flexShrink: 0,
                 borderRadius: 'var(--radius-md)',
                 background: 'var(--accent)',
                 display: 'flex',
@@ -85,17 +90,47 @@ export default function Sidebar({ collapsed, onToggle, theme, onToggleTheme }) {
             >
               <Shield size={18} color="#fff" strokeWidth={2.5} />
             </div>
-            <span
-              style={{
-                fontSize: 18,
-                fontWeight: 700,
-                color: 'var(--text)',
-                letterSpacing: '-0.02em',
-              }}
-            >
-              VulnScan
-            </span>
+            {!collapsed && (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                style={{
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: 'var(--text)',
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                VulnScan
+              </motion.span>
+            )}
           </NavLink>
+
+          {/* Desktop Toggle Button */}
+          <button
+            onClick={onToggle}
+            className="sidebar-desktop-btn"
+            aria-label="Toggle sidebar"
+            style={{
+              position: 'absolute',
+              right: -12,
+              top: 29,
+              width: 24,
+              height: 24,
+              borderRadius: '50%',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              color: 'var(--muted)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              zIndex: 60,
+            }}
+          >
+            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          </button>
 
           {/* Mobile close button — visible only on small screens via CSS */}
           <button
@@ -129,6 +164,9 @@ export default function Sidebar({ collapsed, onToggle, theme, onToggleTheme }) {
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
               padding: '8px 8px 6px',
+              opacity: collapsed ? 0 : 1,
+              transition: 'opacity 0.2s',
+              whiteSpace: 'nowrap',
             }}
           >
             Scanner
@@ -175,10 +213,19 @@ export default function Sidebar({ collapsed, onToggle, theme, onToggleTheme }) {
                     transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                   />
                 )}
-                <span style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <span style={{ position: 'relative', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
                   <Icon size={18} strokeWidth={isActive ? 2.2 : 1.8} />
                 </span>
-                <span style={{ position: 'relative' }}>{label}</span>
+                {!collapsed && (
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    style={{ position: 'relative', whiteSpace: 'nowrap' }}
+                  >
+                    {label}
+                  </motion.span>
+                )}
               </NavLink>
             );
           })}
@@ -201,11 +248,14 @@ export default function Sidebar({ collapsed, onToggle, theme, onToggleTheme }) {
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              paddingLeft: 8,
+              paddingLeft: collapsed ? 0 : 8,
+              justifyContent: collapsed ? 'center' : 'flex-start',
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
             }}
           >
-            <Shield size={12} />
-            <span>VulnScan v1.0</span>
+            <Shield size={12} style={{ flexShrink: 0 }} />
+            {!collapsed && <span>VulnScan v1.0</span>}
           </div>
 
           <motion.button
@@ -263,6 +313,7 @@ export default function Sidebar({ collapsed, onToggle, theme, onToggleTheme }) {
           .sidebar-overlay { display: block !important; }
           .sidebar-close-btn { display: flex !important; }
           .sidebar-mobile-btn { display: flex !important; }
+          .sidebar-desktop-btn { display: none !important; }
         }
       `}</style>
     </>
