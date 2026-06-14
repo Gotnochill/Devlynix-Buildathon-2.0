@@ -1,4 +1,5 @@
 import ScanForm from '../components/ScanForm';
+import LoginButton from '../components/LoginButton';
 
 export default function HomePage() {
   return (
@@ -10,6 +11,10 @@ export default function HomePage() {
       justifyContent: 'center',
       padding: 24,
     }}>
+      <div style={{ position: 'absolute', top: 20, right: 24 }}>
+        <LoginButton />
+      </div>
+
       <div style={{ marginBottom: 36, textAlign: 'center' }}>
         <h1 style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 8 }}>
           VulnScan
@@ -18,6 +23,7 @@ export default function HomePage() {
           Security scanner for URLs and GitHub repositories
         </p>
       </div>
+
       <ScanForm />
     </div>
   );
