@@ -1,60 +1,55 @@
-const axios = require('axios');
+const { lookupCVE } = require('../cve/cveService');
 
-const NVD_BASE = 'https://services.nvd.nist.gov/rest/json/cves/2.0';
+const REDHAT_SEVERITY_MAP = {
+  critical: 'critical',
+  important: 'high',
+  moderate: 'medium',
+  low: 'low',
+};
 
-async function queryNVD(packageName) {
-  try {
-    const headers = {};
-    if (process.env.NVD_API_KEY) headers['apiKey'] = process.env.NVD_API_KEY;
-
-    const res = await axios.get(NVD_BASE, {
-      params: { keywordSearch: packageName, resultsPerPage: 5 },
-      headers,
-      timeout: 8000,
-    });
-
-    return res.data?.vulnerabilities || [];
-  } catch {
-    return [];
+function normalizeSeverity(cve) {
+  if (cve.source === 'nvd') {
+    if (!cve.score) return null;
+    if (cve.score >= 9.0) return 'critical';
+    if (cve.score >= 7.0) return 'high';
+    return null;
   }
+  if (cve.source === 'redhat') {
+    const mapped = REDHAT_SEVERITY_MAP[cve.severity?.toLowerCase()];
+    if (!mapped || mapped === 'medium' || mapped === 'low') return null;
+    return mapped;
+  }
+  return null;
 }
 
-async function scanDependencies(packageJson) {
-  const deps = {
-    ...packageJson.dependencies,
-    ...packageJson.devDependencies,
-  };
-
-  // Limit to first 15 packages to avoid NVD rate limits
-  const entries = Object.entries(deps).slice(0, 15);
+// deps: [{ name, version, ecosystem }]
+async function scanDependencies(deps) {
   const findings = [];
+  const seen = new Set();
 
-  for (const [name, versionRange] of entries) {
-    const vulns = await queryNVD(name);
+  for (const { name, version, ecosystem } of deps.slice(0, 15)) {
+    const cves = await lookupCVE(name);
 
-    for (const vuln of vulns) {
-      const cve = vuln.cve;
-      const metric =
-        cve.metrics?.cvssMetricV31?.[0] ||
-        cve.metrics?.cvssMetricV30?.[0] ||
-        cve.metrics?.cvssMetricV2?.[0];
-      const score = metric?.cvssData?.baseScore ?? 0;
+    for (const cve of cves) {
+      const key = `${name}::${cve.id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
 
-      if (score >= 7.0) {
-        findings.push({
-          type: 'vulnerable-dependency',
-          severity: score >= 9.0 ? 'critical' : 'high',
-          title: `${name}@${versionRange} — ${cve.id}`,
-          description:
-            cve.descriptions?.find(d => d.lang === 'en')?.value || 'No description available.',
-          location: 'package.json',
-          cveId: cve.id,
-          score,
-        });
-      }
+      const severity = normalizeSeverity(cve);
+      if (!severity) continue;
+
+      findings.push({
+        type: 'vulnerable-dependency',
+        severity,
+        title: `${name}@${version} — ${cve.id}`,
+        description: cve.description || 'No description available.',
+        location: ecosystem ? `${ecosystem} manifest` : 'package manifest',
+        cveId: cve.id,
+        score: cve.score || null,
+        source: cve.source,
+      });
     }
 
-    // Small delay to respect NVD rate limits when no API key is provided
     if (!process.env.NVD_API_KEY) {
       await new Promise(r => setTimeout(r, 200));
     }

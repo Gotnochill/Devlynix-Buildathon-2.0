@@ -48,8 +48,12 @@ async function runGithubScan(scanId, repoUrl) {
   }
 
   if (repoData.packageJson) {
-    emitProgress(scanId, { message: 'Checking dependencies for CVEs...' });
-    const findings = await scanDependencies(repoData.packageJson);
+    const pkg = repoData.packageJson;
+    const deps = Object.entries({ ...pkg.dependencies, ...pkg.devDependencies })
+      .map(([name, version]) => ({ name, version, ecosystem: 'npm' }));
+
+    emitProgress(scanId, { message: `Checking ${deps.length} npm dependencies for CVEs...` });
+    const findings = await scanDependencies(deps);
     for (const f of findings) {
       addFinding(scanId, f);
       emitProgress(scanId, { finding: f });
