@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VulnScan</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="header">
+    <span class="logo">VulnScan</span>
+    <span id="status-badge" class="badge"></span>
+  </div>
+
+  <div id="idle-view">
+    <p id="repo-url" class="repo-url">Loading page info...</p>
+    <button id="scan-btn" class="btn-primary" disabled>Scan this repo</button>
+  </div>
+
+  <div id="progress-view" style="display:none">
+    <div class="spinner"></div>
+    <p id="progress-msg" class="progress-msg">Initialising...</p>
+  </div>
+
+  <div id="results-view" style="display:none">
+    <div id="summary" class="summary-grid"></div>
+    <div id="findings" class="findings-list"></div>
+    <div class="actions">
+      <a id="full-report-link" class="btn-secondary" target="_blank">Full report</a>
+      <button id="reset-btn" class="btn-ghost">Scan again</button>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
