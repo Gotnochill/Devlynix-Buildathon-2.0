@@ -1,4 +1,5 @@
-const BACKEND_URL = 'http://localhost:3001';
+const BACKEND_URL = 'http://3.107.241.205:3001';
+const FRONTEND_URL = 'http://3.107.241.205:5173';
 const POLL_INTERVAL = 3000;
 
 const $ = id => document.getElementById(id);
@@ -90,7 +91,7 @@ function startPolling(scanId) {
       setBadge('completed', 'completed');
       renderSummary(scan.summary || {});
       renderFindings(scan.findings || []);
-      $('full-report-link').href = `http://localhost:5173/report/${scanId}`;
+      $('full-report-link').href = `${FRONTEND_URL}/report/${scanId}`;
       setView('results');
     } else {
       setBadge('failed', 'failed');
